@@ -1,6 +1,6 @@
 # Cloud-Native Fitness & Workout Tracker
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-View_App-3b82f6?style=for-the-badge)](https://fitness-tracker-wqcd.onrender.com)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-View_Website-3b82f6?style=for-the-badge)](https://fitness-tracker-wqcd.onrender.com)
 
 A cloud-hosted, three-tier CRUD application designed to help athletes and fitness enthusiasts track their strength progression. This project replaces unstructured, localized phone notes with a centralized database, ensuring workout data (sets, reps, weight) is securely stored, easily accessible, and globally available.
 
