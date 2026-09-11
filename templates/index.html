@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness & Workout Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>Fitness <span class="accent">Tracker</span></h1>
+                <p>Performance & Strength Tracker</p>
+            </div>
+            <button id="theme-toggle" class="btn secondary-btn" style="font-size: 0.85rem; padding: 0.5rem 1rem;">Toggle Theme</button>
+        </header>
+
+        <main>
+            <!-- Form to Add/Edit Workout -->
+            <section class="form-section">
+                <h2 id="form-title">Log New Workout</h2>
+                <form id="workout-form">
+                    <input type="hidden" id="workout-id">
+                    
+                    <div class="form-group">
+                        <label for="exercise_name">Exercise Name</label>
+                        <input type="text" id="exercise_name" required placeholder="e.g., Incline Bench Press" list="exercise-suggestions" autocomplete="off">
+                        <datalist id="exercise-suggestions">
+                            <option value="Bench Press">
+                            <option value="Incline Bench Press">
+                            <option value="Squat">
+                            <option value="Deadlift">
+                            <option value="Overhead Press">
+                            <option value="Barbell Row">
+                            <option value="Pull-up">
+                            <option value="Dumbbell Curl">
+                            <option value="Tricep Pushdowns">
+                            <option value="Leg Press">
+                        </datalist>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="sets">Sets</label>
+                            <input type="number" id="sets" required min="1" placeholder="e.g., 4">
+                        </div>
+                        <div class="form-group half">
+                            <label for="reps">Reps</label>
+                            <input type="number" id="reps" required min="1" placeholder="e.g., 8">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="weight_kg">Weight (kg)</label>
+                            <input type="number" id="weight_kg" required min="0" step="0.5" placeholder="e.g., 70">
+                        </div>
+                        <div class="form-group half">
+                            <label for="date">Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary-btn" id="submit-btn">Save Workout</button>
+                        <button type="button" class="btn secondary-btn hidden" id="cancel-btn">Cancel Edit</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Workout List -->
+            <section class="list-section">
+                <h2>Recent Workouts</h2>
+                <div id="workout-list" class="workout-grid">
+                    <!-- Workouts will be dynamically injected here by JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
+    <!-- Populate datalist with previously entered exercises from DOM if they appear -->
+    <script>
+        // A small script to dynamically populate datalist from fetched workouts 
+        // without altering the main script.js logic or the API fetch calls.
+        const observer = new MutationObserver(() => {
+            const cards = document.querySelectorAll('.workout-card h3');
+            const dataList = document.getElementById('exercise-suggestions');
+            const existingOptions = new Set(Array.from(dataList.options).map(o => o.value));
+            
+            cards.forEach(card => {
+                const exerciseName = card.textContent;
+                if (!existingOptions.has(exerciseName)) {
+                    const option = document.createElement('option');
+                    option.value = exerciseName;
+                    dataList.appendChild(option);
+                    existingOptions.add(exerciseName);
+                }
+            });
+        });
+        observer.observe(document.getElementById('workout-list'), { childList: true });
+    </script>
+</body>
+</html>
