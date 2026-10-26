@@ -1,0 +1,25 @@
+.env
+__pycache__
+index_backup.html
+script_backup.js
+tracker_redesign.html
+update_*.py
+*.pyc
+*.pyo
+*.pyd
+.git
+
+# Security scripts and test suites (keep out of image)
+check_hashes.py
+set_role.py
+reset_password.py
+run_jwt_rbac_tests.py
+parse_trivy.py
+failover_test.ps1
+loadtest.ps1
+ab_raw_*.txt
+failover_results.txt
+loadtest_results.txt
+trivy_*.txt
+trivy_*.json
+Dockerfile*

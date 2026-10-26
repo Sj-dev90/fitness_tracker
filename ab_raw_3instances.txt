@@ -1,0 +1,43 @@
+﻿This is ApacheBench, Version 2.3 <$Revision: 1934973 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking host.docker.internal (be patient)
+
+
+Server Software:        nginx/1.31.8
+Server Hostname:        host.docker.internal
+Server Port:            80
+
+Document Path:          /api/loadtest
+Document Length:        1022 bytes
+
+Concurrency Level:      50
+Time taken for tests:   76.351 seconds
+Complete requests:      2000
+Failed requests:        0
+Total transferred:      2406000 bytes
+HTML transferred:       2044000 bytes
+Requests per second:    26.19 [#/sec] (mean)
+Time per request:       1908.785 [ms] (mean)
+Time per request:       38.176 [ms] (mean, across all concurrent requests)
+Transfer rate:          30.77 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        1 1599 9924.7      3   69735
+Processing:    46  185 169.9    106     703
+Waiting:       46  184 169.9    106     703
+Total:         48 1784 9929.6    110   69870
+
+Percentage of the requests served within a certain time (ms)
+  50%    110
+  66%    140
+  75%    217
+  80%    360
+  90%    562
+  95%    626
+  98%  68115
+  99%  68963
+ 100%  69870 (longest request)
+

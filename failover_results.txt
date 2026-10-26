@@ -1,0 +1,18 @@
+﻿================================================================================
+FAILOVER TEST COMPARISON: BEFORE vs AFTER NGINX HARDENING
+Endpoint        : /api/loadtest
+Requests        : 1000
+Concurrency     : 20
+Client Timeout  : 10s (-s 10)
+Failure Event   : docker stop backend2 (triggered ~5 seconds after start)
+Date/Time       : 2026-10-25 04:03:31
+================================================================================
+Metric                           BEFORE (No Failover)    AFTER (Hardened)        Difference
+--------------------------------------------------------------------------------
+Complete requests                999                     199                     -800
+Failed requests                  1                       801                     800
+Non-2xx responses                0                       0                       0
+Requests/sec                     31.60                   15.02                   -16.58
+Total time [s]                   31.61                   13.25                   -18.36 s
+Max latency [ms]                 10000                   10000                   +0 ms
+================================================================================

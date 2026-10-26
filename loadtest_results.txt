@@ -1,0 +1,14 @@
+﻿================================================================================
+LOAD TEST COMPARISON: 1 INSTANCE vs 3 INSTANCES BEHIND NGINX
+Endpoint    : /api/loadtest  (Real MongoDB Atlas read, 20 documents)
+Requests    : 2000
+Concurrency : 50
+Date/Time   : 2026-10-25 03:31:01
+================================================================================
+Metric                           1 Instance              3 Instances             Change
+--------------------------------------------------------------------------------
+Requests per second (RPS)        14.82                   26.19                   +76.72%
+Time per request (mean) [ms]     3374.20                 1908.79                 -1465.41 ms faster
+Failed requests                  0                       0                       delta=0
+Total time taken [s]             134.97                  76.35                  
+================================================================================

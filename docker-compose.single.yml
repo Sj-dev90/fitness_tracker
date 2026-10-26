@@ -1,0 +1,24 @@
+services:
+  backend1:
+    build: .
+    image: fitness-tracker-backend:latest
+    container_name: backend1
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - SECRET_KEY=${SECRET_KEY}
+    expose:
+      - "5000"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-single.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend1
+    restart: unless-stopped

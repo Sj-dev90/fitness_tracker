@@ -1,107 +1,362 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitness & Workout Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    
+    <title>Training Log — Redesign</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    
+<!-- Camera/Crop Modal -->
+<div class="modal-overlay hidden" id="camera-modal">
+    <div class="modal" style="max-width:400px; padding: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Log Meal Photo</h2>
+            <button style="background:none; border:none; color:var(--text-mid); cursor:pointer;" id="camera-close-btn">&times;</button>
+        </div>
+        
+        <div id="camera-options" style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn btn-primary" id="btn-live-photo">Take Live Photo</button>
+            <button class="btn secondary-btn" id="btn-device-upload">Upload from Device</button>
+        </div>
+        
+        <div id="camera-stream-container" class="hidden" style="display:flex; flex-direction:column; gap:10px;">
+            <video id="live-video" autoplay playsinline style="width:100%; background:#000; border-radius:8px;"></video>
+            <button class="btn btn-primary" id="btn-capture">Capture Frame</button>
+        </div>
+        
+        <div id="crop-container" class="hidden" style="display:flex; flex-direction:column; gap:10px;">
+            <div id="crop-area" style="position:relative; width:100%; aspect-ratio:1/1; background:#222; border-radius:8px; overflow:hidden; touch-action:none;">
+                <canvas id="crop-canvas" style="position:absolute; transform-origin: top left; left:0; top:0;"></canvas>
+                <div style="position:absolute; top:10%; left:10%; right:10%; bottom:10%; border:2px dashed #C79A3E; pointer-events:none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap: 8px;">
+               <input type="range" id="crop-zoom" min="0.1" max="5" step="0.05" value="1" style="flex:1;">
+               <button class="btn btn-primary" id="btn-confirm-crop" style="flex:none; padding:8px 12px; font-size:12px;">Analyze Macro</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      .app-view { display: none; }
+      .app-view.active { display: block; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="header-left">
-                <h1>Fitness <span class="accent">Tracker</span></h1>
-                <p>Performance & Strength Tracker</p>
-            </div>
-            <button id="theme-toggle" class="btn secondary-btn" style="font-size: 0.85rem; padding: 0.5rem 1rem;">Toggle Theme</button>
-        </header>
 
-        <main>
-            <!-- Form to Add/Edit Workout -->
-            <section class="form-section">
-                <h2 id="form-title">Log New Workout</h2>
-                <form id="workout-form">
-                    <input type="hidden" id="workout-id">
-                    
-                    <div class="form-group">
-                        <label for="exercise_name">Exercise Name</label>
-                        <input type="text" id="exercise_name" required placeholder="e.g., Incline Bench Press" list="exercise-suggestions" autocomplete="off">
-                        <datalist id="exercise-suggestions">
-                            <option value="Bench Press">
-                            <option value="Incline Bench Press">
-                            <option value="Squat">
-                            <option value="Deadlift">
-                            <option value="Overhead Press">
-                            <option value="Barbell Row">
-                            <option value="Pull-up">
-                            <option value="Dumbbell Curl">
-                            <option value="Tricep Pushdowns">
-                            <option value="Leg Press">
-                        </datalist>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label for="sets">Sets</label>
-                            <input type="number" id="sets" required min="1" placeholder="e.g., 4">
-                        </div>
-                        <div class="form-group half">
-                            <label for="reps">Reps</label>
-                            <input type="number" id="reps" required min="1" placeholder="e.g., 8">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label for="weight_kg">Weight (kg)</label>
-                            <input type="number" id="weight_kg" required min="0" step="0.5" placeholder="e.g., 70">
-                        </div>
-                        <div class="form-group half">
-                            <label for="date">Date</label>
-                            <input type="date" id="date" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn primary-btn" id="submit-btn">Save Workout</button>
-                        <button type="button" class="btn secondary-btn hidden" id="cancel-btn">Cancel Edit</button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- Workout List -->
-            <section class="list-section">
-                <h2>Recent Workouts</h2>
-                <div id="workout-list" class="workout-grid">
-                    <!-- Workouts will be dynamically injected here by JS -->
-                </div>
-            </section>
-        </main>
+<div class="shell">
+  <!-- LEFT RAIL -->
+  <nav class="rail">
+    <div class="rail-mark">FT</div>
+    <div class="rail-nav">
+      <div class="rail-item active" title="Dashboard" id="nav-dashboard" style="cursor: pointer;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M3 9h18" stroke-linecap="round"/></svg>
+      </div>
+      <div class="rail-item" title="Nutrition" id="nav-nutrition" style="cursor: pointer;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V10M12 19V5M20 19v-7" stroke-linecap="round"/></svg>
+      </div>
+      <div class="rail-item" title="History" id="nav-recent" style="cursor: pointer;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4l3 2"/></svg>
+      </div>
     </div>
+    <div class="rail-bottom">
+      <button id="theme-toggle" class="rail-item" title="Toggle Theme" style="background:transparent; border:none; cursor: pointer;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+      <div class="rail-avatar" id="nav-settings" style="cursor: pointer;">?</div>
+    </div>
+  </nav>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <!-- MAIN -->
+  <main>
+    <!-- VIEW 1: Dashboard -->
+    <div id="view-dashboard" class="app-view active">
+      <div class="topline">
+        <h1>Today's session</h1>
+        <button class="phase-pill" id="header-goal-btn" style="cursor: pointer;"><span class="dot"></span><span id="header-goal-text">Recomp</span></button>
+      </div>
+      <p class="subline">Target today: <button style="background:none; border:none; padding:0; color:var(--text); font-weight:500; font-family:var(--font-body); cursor:pointer;" id="header-split-btn">upper push</button></p>
+
+      <!-- COMMAND BAR (AI Form) -->
+      <div class="command">
+        <div class="command-label">
+          <div class="command-label-left">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.3L19 9l-5.2 1.7L12 16l-1.8-5.3L5 9l5.2-1.7z"/></svg>
+              Log in plain language
+          </div>
+          <button type="button" id="toggle-manual-btn" class="btn secondary-btn" style="padding: 4px 10px; font-size: 11px;">Switch to Manual Entry</button>
+        </div>
+        
+        <form id="ai-form">
+          <div class="command-row">
+              <input class="command-input" type="text" id="ai_text" required placeholder="e.g. bench 4x8 at 70kg, then squats 3x10 at 100kg">
+              <button type="submit" class="btn-primary" id="ai-submit-btn" style="display: flex; gap: 6px; align-items: center;">
+                  <span>Log it</span>
+                  <svg id="ai-spinner" class="hidden" style="width: 14px; height: 14px; animation: spin 1s linear infinite;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity: 0.25;"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style="opacity: 0.75;"></path>
+                  </svg>
+              </button>
+          </div>
+          <div id="ai-result" class="hidden" style="font-size: 12px; margin-top: 8px; color: var(--text-mid);"></div>
+        </form>
+
+        <form id="workout-form" class="hidden" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 2;">
+                    <label style="font-size: 11px; color: var(--text-mid);">Exercise</label>
+                    <input type="text" id="exercise_name" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);" list="exercise-suggestions">
+                    <datalist id="exercise-suggestions"></datalist>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; color: var(--text-mid);">Date</label>
+                    <input type="date" id="date" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; color: var(--text-mid);">Sets</label>
+                    <input type="number" id="sets" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; color: var(--text-mid);">Reps</label>
+                    <input type="number" id="reps" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; color: var(--text-mid);">Weight (kg)</label>
+                    <input type="number" step="0.1" id="weight_kg" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+                </div>
+            </div>
+            <input type="hidden" id="edit_id">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="submit" class="btn btn-primary" id="submit-btn">Save Workout</button>
+                <button type="button" class="btn secondary-btn hidden" id="cancel-btn">Cancel Edit</button>
+            </div>
+        </form>
+      </div>
+
+      
+      <!-- Holistic AI Coach Review -->
+      <div class="panel" id="coach-review-section" style="margin-bottom: 24px;">
+          <div class="panel-head">
+              <h2>Holistic AI Coach</h2>
+          </div>
+          <button class="btn btn-primary" id="run-coach-btn" style="width:100%; margin-bottom:10px;">Run 30-Day Analysis</button>
+          <div id="coach-result" class="hidden" style="font-size:14px; line-height:1.5; color:var(--text-primary); padding:10px; background:var(--bg); border:1px solid var(--border); border-radius:8px;"></div>
+      </div>
+
+      <!-- Analytics Dashboard -->
+      <div class="panel" id="analytics-section">
+          <div class="panel-head">
+              <h2>Analytics Dashboard</h2>
+          </div>
+          <div class="analytics-grid" style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom: 24px;">
+              <div class="chart-box" style="flex:1; min-width:300px; height:250px;"><canvas id="oneRmChart"></canvas></div>
+              <div class="chart-box" style="flex:1; min-width:300px; height:250px;"><canvas id="volumePieChart"></canvas></div>
+          </div>
+      </div>
+
+      <!-- Workout List -->
+      <div class="panel list-section" id="recent-sets-section" style="margin-bottom: 0;">
+          <div class="panel-head">
+              <h2>Recent sets</h2>
+          </div>
+          <div class="chip-row" id="quick-repeat-chips" style="display:flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+              <!-- Chips dynamically injected here -->
+          </div>
+          <div id="workout-list">
+              <!-- Workouts will be dynamically injected here by JS in log-row format -->
+          </div>
+      </div>
+    </div> <!-- END VIEW 1 -->
     
-    <!-- Populate datalist with previously entered exercises from DOM if they appear -->
-    <script>
-        // A small script to dynamically populate datalist from fetched workouts 
-        // without altering the main script.js logic or the API fetch calls.
-        const observer = new MutationObserver(() => {
-            const cards = document.querySelectorAll('.workout-card h3');
-            const dataList = document.getElementById('exercise-suggestions');
-            const existingOptions = new Set(Array.from(dataList.options).map(o => o.value));
+    <!-- VIEW 2: Macro & Calorie Tracking -->
+    <div id="view-nutrition" class="app-view hidden">
+      <div class="topline">
+        <h1>Nutrition & Macros</h1>
+      </div>
+      
+      <!-- Macro Totals -->
+      <div class="panel" style="margin-bottom: 20px;">
+        <div class="panel-head">
+            <h2>Today's Totals</h2>
+        </div>
+        <div style="display:flex; gap: 16px; flex-wrap: wrap;">
+            <div style="flex:1; min-width:100px; padding: 16px; background:var(--bg); border:1px solid var(--border); border-radius:8px; text-align:center;">
+                <div style="font-size: 12px; color:var(--text-mid); margin-bottom:4px;">Calories</div>
+                <div style="font-size: 24px; font-weight:700; color:var(--accent);" id="macro-calories">0</div>
+            </div>
+            <div style="flex:1; min-width:100px; padding: 16px; background:var(--bg); border:1px solid var(--border); border-radius:8px; text-align:center;">
+                <div style="font-size: 12px; color:var(--text-mid); margin-bottom:4px;">Protein</div>
+                <div style="font-size: 24px; font-weight:700; color:var(--text-primary);" id="macro-protein">0g</div>
+            </div>
+            <div style="flex:1; min-width:100px; padding: 16px; background:var(--bg); border:1px solid var(--border); border-radius:8px; text-align:center;">
+                <div style="font-size: 12px; color:var(--text-mid); margin-bottom:4px;">Carbs</div>
+                <div style="font-size: 24px; font-weight:700; color:var(--text-primary);" id="macro-carbs">0g</div>
+            </div>
+            <div style="flex:1; min-width:100px; padding: 16px; background:var(--bg); border:1px solid var(--border); border-radius:8px; text-align:center;">
+                <div style="font-size: 12px; color:var(--text-mid); margin-bottom:4px;">Fat</div>
+                <div style="font-size: 24px; font-weight:700; color:var(--text-primary);" id="macro-fat">0g</div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Meal Log -->
+      <div class="panel" style="margin-bottom: 0;">
+          <div class="panel-head">
+              <h2>Log a meal</h2>
+              <span class="meta camera" style="cursor:pointer;" id="meal-camera-trigger">camera</span>
+          </div>
+          <input type="file" id="meal-photo-input" accept="image/*" capture="environment" class="hidden" style="display: none;">
+          <div class="meal-drop" id="meal-upload-box" style="cursor: pointer;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-3h5L16 7"/><circle cx="12" cy="13.5" r="3.2"/></svg>
+              <div class="t1" id="meal-drop-t1">Take or upload a photo</div>
+              <div class="t2" id="meal-drop-t2">Works best with one dish per frame</div>
+          </div>
+          <div class="meal-result hidden" id="meal-result-card" style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                  <div class="meal-thumb" id="meal-thumb-preview" style="background-size: cover; background-position: center; width: 60px; height: 60px; border-radius: 8px;"></div>
+                  <div class="meal-info" style="flex: 1;">
+                      <input type="text" id="meal-name" style="width: 100%; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 4px 8px; border-radius: 4px; font-weight: 600; margin-bottom: 4px;" value="">
+                      <div class="conf" id="meal-conf" style="font-size: 11px; color: var(--text-faint); margin-bottom: 4px;"></div>
+                      <div class="meal-macros" style="display: flex; gap: 6px; font-size: 12px;">
+                          <input type="number" id="meal-cal" style="width: 50px; padding: 2px 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px;"> kcal
+                          <input type="number" id="meal-pro" style="width: 40px; padding: 2px 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px;"> g pro
+                          <input type="number" id="meal-carb" style="width: 40px; padding: 2px 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px;"> g carb
+                      </div>
+                  </div>
+              </div>
+              <button class="btn btn-primary" id="meal-confirm-btn" style="width: 100%;">Confirm & Log Meal</button>
+          </div>
+          <div id="meal-error" class="hidden" style="color: var(--danger-color); font-size: 12px; margin-top: 10px;"></div>
+      </div>
+    </div> <!-- END VIEW 2 -->
+
+    <!-- VIEW 3: Settings & Profile -->
+    <div id="view-settings" class="app-view hidden">
+        <div class="topline">
+          <h1>Settings & Profile</h1>
+        </div>
+        
+        <div class="panel" style="margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                    <h2 style="margin:0; font-family:'Space Grotesk', sans-serif;">Account Profile</h2>
+                    <div style="font-size:13px; color:var(--text-mid); margin-top:4px;">
+                        Username: <span id="profile-username" style="color:var(--text-primary); font-weight:500;"></span> | 
+                        Email: <span id="profile-email" style="color:var(--text-primary); font-weight:500;"></span>
+                    </div>
+                </div>
+                <button class="btn secondary-btn" id="btn-logout-modal">Log Out</button>
+            </div>
             
-            cards.forEach(card => {
-                const exerciseName = card.textContent;
-                if (!existingOptions.has(exerciseName)) {
-                    const option = document.createElement('option');
-                    option.value = exerciseName;
-                    dataList.appendChild(option);
-                    existingOptions.add(exerciseName);
-                }
-            });
+            <hr style="border:0; border-top:1px solid var(--border); margin: 20px 0;">
+
+            <div class="form-group" style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600; font-size:13px;">Physical Metrics</label>
+                <div style="display:flex; gap:12px;">
+                    <div style="flex:1;">
+                        <input type="number" id="settings-weight" placeholder="Weight (kg)" style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:6px; font-family:var(--font-body);">
+                    </div>
+                    <div style="flex:1;">
+                        <input type="number" id="settings-height" placeholder="Height (cm)" style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:6px; font-family:var(--font-body);">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600; font-size:13px;">Goal</label>
+                <select id="settings-goal" style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:6px; font-family:var(--font-body);">
+                    <option value="Bulk">Bulk</option>
+                    <option value="Cut">Cut</option>
+                    <option value="Recomp">Recomp</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:24px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600; font-size:13px;">Training Split</label>
+                <select id="settings-split" style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:6px; font-family:var(--font-body);">
+                    <option value="Push / Pull / Legs">Push / Pull / Legs (PPL)</option>
+                    <option value="Upper / Lower">Upper / Lower</option>
+                    <option value="Full Body">Full Body</option>
+                    <option value="Custom">Custom</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%; margin-bottom:20px;" id="settings-save-btn">Save Profile & Preferences</button>
+
+            <!-- Two-Factor Authentication Panel -->
+            <div id="totp-panel" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:20px;">
+                <h3 style="margin-top:0; font-size:14px; margin-bottom:12px;">🔐 Two-Factor Authentication</h3>
+                <div id="totp-setup-section">
+                    <button class="btn secondary-btn" id="totp-enable-btn" style="width:100%;">Enable Two-Factor Auth</button>
+                    <div id="totp-qr-section" style="display:none; margin-top:12px; text-align:center;">
+                        <p style="font-size:12px; color:var(--text-mid); margin-bottom:10px;">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the code below to confirm.</p>
+                        <img id="totp-qr-img" style="width:180px; height:180px; display:block; margin:0 auto 12px; border-radius:6px;">
+                        <div class="form-group" style="text-align:left;">
+                            <label>Enter code from authenticator to confirm</label>
+                            <input type="text" id="totp-confirm-code" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+                        </div>
+                        <button class="btn btn-primary" id="totp-confirm-btn" style="width:100%;">Confirm & Enable</button>
+                        <p id="totp-setup-error" style="color:var(--danger-color); font-size:12px; margin-top:8px; display:none;"></p>
+                    </div>
+                </div>
+                <p id="totp-enabled-msg" style="display:none; color:#4ade80; font-size:13px; margin:0;">✓ Two-factor authentication is enabled on your account.</p>
+            </div>
+
+            <!-- AI Coach Recommendation -->
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:16px;">
+                <h3 style="margin-top:0; font-size:14px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                    ✨ AI Coach Recommendation
+                </h3>
+                <button class="ai-suggest-btn" id="ai-recommend-btn" style="width:100%; padding:10px; background:var(--border-soft); border:none; border-radius:6px; margin-bottom:10px; cursor:pointer; color:var(--text);">Get AI Coach Recommendation</button>
+                <div class="ai-suggest-result hidden" id="ai-recommend-result" style="font-size:13px; color:var(--text-mid); line-height:1.5; margin-top:10px;"></div>
+            </div>
+        </div>
+    </div> <!-- END VIEW 3 -->
+
+  </main>
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay hidden" id="history-modal">
+    <div class="modal" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Full History</h2>
+            <button style="background:none; border:none; color:var(--text-mid); cursor:pointer;" id="history-close-btn">&times;</button>
+        </div>
+        <div id="history-content">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}?v=6"></script>
+<script>
+    const observer = new MutationObserver(() => {
+        const cards = document.querySelectorAll('.log-name');
+        const dataList = document.getElementById('exercise-suggestions');
+        const existingOptions = new Set(Array.from(dataList.options).map(o => o.value));
+        
+        cards.forEach(card => {
+            const clone = card.cloneNode(true);
+            const span = clone.querySelector('span');
+            if(span) span.remove();
+            const exerciseName = clone.textContent.trim();
+            
+            if (exerciseName && !existingOptions.has(exerciseName)) {
+                const option = document.createElement('option');
+                option.value = exerciseName;
+                dataList.appendChild(option);
+                existingOptions.add(exerciseName);
+            }
         });
-        observer.observe(document.getElementById('workout-list'), { childList: true });
-    </script>
+    });
+    observer.observe(document.getElementById('workout-list'), { childList: true });
+</script>
 </body>
 </html>

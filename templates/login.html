@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Fitness Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .modal {
+            position: relative;
+            transform: none;
+            top: auto;
+            left: auto;
+            width: 100%;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="modal">
+    <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; margin: 0;">Fitness Tracker</h1>
+        <p style="color: var(--text-mid); font-size: 14px; margin-top: 4px;">Log in to view your data.</p>
+    </div>
+    <div class="tabs">
+        <div class="tab active" id="tab-login">Login</div>
+        <div class="tab" id="tab-register">Register</div>
+    </div>
+    <form id="auth-form">
+        <div class="form-group" id="group-name" style="display:none;">
+            <label>Name</label>
+            <input type="text" id="auth-name" placeholder="SJ">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="auth-email" required placeholder="user@example.com">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="auth-password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;" id="auth-submit-btn">Login</button>
+        <p id="auth-error" style="color:var(--danger-color); font-size:12px; margin-top:8px; display:none;"></p>
+    </form>
+
+    <!-- TOTP second step — shown only when mfa_required is true -->
+    <div id="totp-step" style="display:none;">
+        <p style="color:var(--text-mid); font-size:14px; margin-bottom:12px;">Enter the 6-digit code from your authenticator app.</p>
+        <div class="form-group">
+            <label>Authenticator Code</label>
+            <input type="text" id="totp-code" placeholder="000000" maxlength="6" autocomplete="one-time-code" inputmode="numeric">
+        </div>
+        <button type="button" class="btn btn-primary" style="width:100%;" id="totp-submit-btn">Verify</button>
+        <p id="totp-error" style="color:var(--danger-color); font-size:12px; margin-top:8px; display:none;"></p>
+    </div>
+</div>
+
+<script>
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const groupName = document.getElementById('group-name');
+    const authForm = document.getElementById('auth-form');
+    const authSubmitBtn = document.getElementById('auth-submit-btn');
+    const authError = document.getElementById('auth-error');
+    const totpStep = document.getElementById('totp-step');
+    const totpSubmitBtn = document.getElementById('totp-submit-btn');
+    const totpError = document.getElementById('totp-error');
+
+    let isLoginMode = true;
+    let pendingMfaToken = null;
+
+    tabLogin.addEventListener('click', () => {
+        isLoginMode = true;
+        tabLogin.classList.add('active'); tabRegister.classList.remove('active');
+        groupName.style.display = 'none'; authSubmitBtn.textContent = 'Login';
+        authError.style.display = 'none';
+    });
+
+    tabRegister.addEventListener('click', () => {
+        isLoginMode = false;
+        tabRegister.classList.add('active'); tabLogin.classList.remove('active');
+        groupName.style.display = 'block'; authSubmitBtn.textContent = 'Register';
+        authError.style.display = 'none';
+    });
+
+    authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+        const name = document.getElementById('auth-name').value;
+
+        const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+        const payload = isLoginMode ? { email, password } : { email, password, name };
+
+        authSubmitBtn.textContent = 'Processing...';
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                authError.textContent = data.error;
+                authError.style.display = 'block';
+                authSubmitBtn.textContent = isLoginMode ? 'Login' : 'Register';
+            } else if (data.mfa_required) {
+                // TOTP required — switch to second step
+                pendingMfaToken = data.mfa_token;
+                authForm.style.display = 'none';
+                totpStep.style.display = 'block';
+                document.getElementById('totp-code').focus();
+            } else {
+                window.location.href = '/';
+            }
+        } catch (err) {
+            authError.textContent = 'Network error. Please check your connection.';
+            authError.style.display = 'block';
+            authSubmitBtn.textContent = isLoginMode ? 'Login' : 'Register';
+        }
+    });
+
+    totpSubmitBtn.addEventListener('click', async () => {
+        const code = document.getElementById('totp-code').value.trim();
+        if (!code) { totpError.textContent = 'Please enter the code.'; totpError.style.display = 'block'; return; }
+
+        totpSubmitBtn.textContent = 'Verifying...';
+        totpError.style.display = 'none';
+
+        try {
+            const res = await fetch('/api/auth/totp/verify', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({ mfa_token: pendingMfaToken, code })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                totpError.textContent = data.error || 'Verification failed.';
+                totpError.style.display = 'block';
+                totpSubmitBtn.textContent = 'Verify';
+            } else {
+                window.location.href = '/';
+            }
+        } catch (err) {
+            totpError.textContent = 'Network error. Please check your connection.';
+            totpError.style.display = 'block';
+            totpSubmitBtn.textContent = 'Verify';
+        }
+    });
+
+    // Allow pressing Enter in TOTP code input
+    document.getElementById('totp-code').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') totpSubmitBtn.click();
+    });
+</script>
+
+</body>
+</html>

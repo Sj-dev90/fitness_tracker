@@ -1,0 +1,127 @@
+================================================================================
+TRIVY SECURITY SCAN COMPARISON: BEFORE vs AFTER
+================================================================================
+
+1. IMAGE ATTRIBUTES COMPARISON
+--------------------------------------------------------------------------------
+Attribute                | BEFORE (fitness-tracker-backend:before) | AFTER (fitness-tracker-backend:latest)
+--------------------------------------------------------------------------------
+Base Image               | python:3.11-slim                 | python:3.12-slim
+Build Type               | Single-stage                     | Multi-stage (builder + runtime)
+Image Size               | 292MB                            | 375MB
+Running User             | root (UID 0)                     | appuser (UID 10001)
+Container Healthcheck    | None                             | HEALTHCHECK (urllib /health)
+Bytecode / Buffering     | Default                          | PYTHONDONTWRITEBYTECODE=1, PYTHONUNBUFFERED=1
+
+2. VULNERABILITY FINDINGS COMPARISON TABLE
+--------------------------------------------------------------------------------
+Category           | BEFORE (CRIT / HIGH / MED / LOW = TOTAL) | AFTER (CRIT / HIGH / MED / LOW = TOTAL)
+--------------------------------------------------------------------------------
+OS Packages        | 0 / 44 / 58 / 61 = 163                   | 0 / 44 / 58 / 61 = 163
+Python Packages    | 6 / 46 / 35 / 4 = 91                     | 0 / 4 / 2 / 1 = 7
+--------------------------------------------------------------------------------
+GRAND TOTAL        | 6 / 90 / 93 / 65 = 254                   | 0 / 48 / 60 / 62 = 170
+--------------------------------------------------------------------------------
+Net Findings Reduction: 254 -> 170 (-84 total findings, 33.1% reduction)
+Critical Findings Reduction: 6 -> 0 (100% eliminated!)
+Python Findings Reduction: 91 -> 7 (-84 findings, 92.3% reduction)
+
+3. REMAINING CRITICAL AND HIGH FINDINGS IN AFTER IMAGE
+--------------------------------------------------------------------------------
+CRITICAL findings: 0
+
+HIGH findings: 48
+
+  [Python Packages (4 findings)]:
+  - Package: msgpack
+    Installed Version: 1.1.2
+    Vulnerability ID:  GHSA-6v7p-g79w-8964
+    Fix Exists:        Yes (Fixed in 1.2.1)
+    Title:             MessagePack for Python: Out-of-bounds read / crash on Unpacker reuse after a caught error
+
+  - Package: setuptools
+    Installed Version: 70.3.0
+    Vulnerability ID:  CVE-2025-47273
+    Fix Exists:        Yes (Fixed in 78.1.1)
+    Title:             setuptools: Path Traversal Vulnerability in setuptools PackageIndex
+
+  - Package: urllib3
+    Installed Version: 2.7.0
+    Vulnerability ID:  CVE-2026-97687
+    Fix Exists:        Yes (Fixed in 2.8.0)
+    Title:             urllib3: urllib3: Traffic interception via HTTPS proxy TLS configuration override
+
+  - Package: urllib3
+    Installed Version: 2.7.0
+    Vulnerability ID:  CVE-2026-97689
+    Fix Exists:        Yes (Fixed in 2.8.0)
+    Title:             urllib3: urllib3: Denial of Service via unbounded memory allocation in chunk parser
+
+  [OS Packages (44 findings)]:
+  - Package: bsdutils (1:2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libacl1 (2.3.2-2+b1)
+    Vulnerability IDs: CVE-2026-54369 (1 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libblkid1 (2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: liblastlog2-2 (2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libmount1 (2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libncursesw6 (6.5+20250216-2)
+    Vulnerability IDs: CVE-2025-69720 (1 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libsmartcols1 (2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libsystemd0 (257.13-1~deb13u1)
+    Vulnerability IDs: CVE-2026-16742 (1 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libtinfo6 (6.5+20250216-2)
+    Vulnerability IDs: CVE-2025-69720 (1 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libudev1 (257.13-1~deb13u1)
+    Vulnerability IDs: CVE-2026-16742 (1 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: libuuid1 (2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: login (1:4.16.0-2+really2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: mount (2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: ncurses-base (6.5+20250216-2)
+    Vulnerability IDs: CVE-2025-69720 (1 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: ncurses-bin (6.5+20250216-2)
+    Vulnerability IDs: CVE-2025-69720 (1 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: perl-base (5.40.1-6+deb13u1)
+    Vulnerability IDs: CVE-2026-9538 (1 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
+
+  - Package: util-linux (2.41.5-0+deb13u1)
+    Vulnerability IDs: CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410 (4 finding(s))
+    Fix Exists:        No (None provided upstream by Debian Trixie/sid)
